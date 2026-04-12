@@ -1,31 +1,27 @@
-from zone import Zone
+from typing import Optional
+from models.zone import Zone
 
 
 class Drone:
-    def __init__(self, id: str, current_zone: Zone):
-        self.id: str = id
-        self.current_zone: Zone = current_zone
-        self.destination_zone: Zone | None = None  # Começa sem destino
-        self.arrival_turn: int = 0
-
-    def set_mission(self, destination: Zone, current_turn: int):
-        self.destination_zone = destination
-        cost = destination.get_cost()
-        self.arrival_turn = current_turn + cost
+    def __init__(self, drone_id: str, start_zone: Zone) -> None:
+        self.id: str = drone_id
+        self.current_zone: Optional[Zone] = start_zone 
         
-        # Sai da zona atual para começar o voo
-        if self.current_zone:
-            self.current_zone.current_drones.remove(self)
-            self.current_zone = None 
-
+        self.target_zone: Optional[Zone] = None
+        self.arrival_turn: int = 0
+        self.flight_cost: int = 0          # NOVA VARIÁVEL
+        self.connection_name: str = ""     # NOVA VARIÁVEL
+        self.active_connection = None      # <--- NOVA VARIÁVEL AQUI
+        
     def is_flying(self, current_turn: int) -> bool:
-        return current_turn < self.arrival_turn
+        return self.target_zone is not None and current_turn < self.arrival_turn
 
-    def complete_mission(self):
-        # O pouso: destino vira zona atual
-        self.current_zone = self.destination_zone
-        self.destination_zone = None
+    def finish_flight(self) -> None:
+        self.current_zone = self.target_zone
+        self.target_zone = None
         self.arrival_turn = 0
-        # Entra na lista da nova zona
-        if self.current_zone:
-            self.current_zone.current_drones.append(self)
+        self.flight_cost = 0
+        self.connection_name = ""
+
+    def __repr__(self) -> str:
+        return f"Drone({self.id})"

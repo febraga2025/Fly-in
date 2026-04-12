@@ -1,27 +1,48 @@
-from abc import ABC, abstractmethod
+from typing import Optional
 
 
-class Zone(ABC):
-    def __init__(self, name: str, x: int, y: int, max_capacity: int, color: str):
-        self.name = name
-        self.x = x
-        self.y = y
-        self.max_capacity = max_capacity
-        self.color = color
-        self.current_drones: list = []  # Nossa lista para controlar quem está nela
+class Zone:
+    """"Class abstract fort all zone"""
+    def __init__(self, name: str, x: int, y: int, max_drones: int = 1,
+                 color: Optional[str] = None) -> None:
+        self.name: str = name
+        self.x: int = x
+        self.y: int = y
+        self.max_drones: int = max_drones
+        self.color: Optional[str] = color
 
-    @abstractmethod
-    def get_cost(self) -> int:
-        """Retorna o custo de entrada na zona."""
-        pass
+        self.is_start: bool = False
+        self.is_end: bool = False
+
+    def get_movement_cost(self) -> int:
+        raise NotImplementedError("Subclasses deve implementar get_movement")
+
+    def can_enter(self) -> bool:
+        "verifica a zona(black return false)"
+        return True
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name}, max={self.max_drones})"
+
+
+class PriorityZone(Zone):
+    def get_movement_cost(self) -> int:
+        return 1
 
 
 class NormalZone(Zone):
-    def get_cost(self) -> int:
-
+    def get_movement_cost(self) -> int:
         return 1
 
 
 class RestrictedZone(Zone):
-    def get_cost(self) -> int:
+    def get_movement_cost(self) -> int:
         return 2
+
+
+class BlockedZone(Zone):
+    def get_movement_cost(self) -> int:
+        return 999
+
+    def can_enter(self) -> bool:
+        return False
