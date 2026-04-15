@@ -5,23 +5,32 @@ from models.drone import Drone
 
 # Tabela de Cores ANSI para o Terminal
 COLORS = {
+    # Cores Básicas
+    "black": "\033[30m",
     "red": "\033[91m",
     "green": "\033[92m",
     "yellow": "\033[93m",
     "blue": "\033[94m",
     "magenta": "\033[95m",
     "cyan": "\033[96m",
+    "gray": "\033[90m",
+    
+    # Cores Estendidas (256-color palette)
     "orange": "\033[38;5;208m",
     "brown": "\033[38;5;94m",
     "purple": "\033[38;5;129m",
-    "gray": "\033[90m",
+    "maroon": "\033[38;5;88m",
+    "gold": "\033[38;5;220m",
+    
     "reset": "\033[0m"
 }
+
 
 def colorize(text: str, color_name: Optional[str]) -> str:
     if color_name and color_name.lower() in COLORS:
         return f"{COLORS[color_name.lower()]}{text}{COLORS['reset']}"
     return text
+
 
 class Simulation:
     def __init__(self, map_graph: MapGraph, nb_drones: int) -> None:
