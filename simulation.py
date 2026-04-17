@@ -14,8 +14,6 @@ COLORS = {
     "magenta": "\033[95m",
     "cyan": "\033[96m",
     "gray": "\033[90m",
-    
-    # Cores Estendidas (256-color palette)
     "orange": "\033[38;5;208m",
     "brown": "\033[38;5;94m",
     "purple": "\033[38;5;129m",

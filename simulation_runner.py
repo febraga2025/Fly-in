@@ -72,5 +72,4 @@ def run_text_simulation(
             simulation.turn -= 1
             break
 
-    history.append((simulation.turn, _capture_simulation_state(simulation)))
     return map_graph, turn_logs, history
