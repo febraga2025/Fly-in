@@ -4,6 +4,7 @@ from models.zone import Zone
 from models.connections import Connection
 from models.drone import Drone
 
+
 class Visualizador:
     def __init__(self, largura: int = 1900, altura: int = 800) -> None: 
         self.largura = largura

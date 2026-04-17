@@ -125,12 +125,11 @@ class Simulation:
                 conn_usage[best_conn] = conn_usage.get(best_conn, 0) + 1
 
                 if cost == 1:
-                    colored_zone = colorize(best_neighbor.name, best_neighbor.color)
+                    colored_zone = colorize(best_neighbor.name,
+                                            best_neighbor.color)
                     turn_outputs.append(f"{drone.id}-{colored_zone}")
                 else:
                     turn_outputs.append(f"{drone.id}-{connection_used}")
-
-        # O PRINT OFICIAL DA MOULINETTE (sem o 'if' para garantir que os turnos vazios apareçam)
         print(" ".join(turn_outputs))
 
     def is_finished(self) -> bool:
