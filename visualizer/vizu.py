@@ -6,21 +6,36 @@ from models.drone import Drone
 
 
 class Visualizador:
-    def __init__(self, largura: int = 1900, altura: int = 800) -> None: 
+    def __init__(self, largura: int = 1600, altura: int = 600) -> None: 
         self.largura = largura
         self.altura = altura
         self.margem = 100
         # ajusta de acordo com tamanho do mapa
         self.escala = 70
-        self.desloc_x = 150   # Aumente para empurrar para a DIREITA
+        self.desloc_x =  40   # Aumente para empurrar para a DIREITA
         self.desloc_y = 250
         pygame.font.init()
         self.fonte = pygame.font.SysFont("Arial", 14, bold=True)
         self.cores_rgb = {
+            "black": (44, 44, 44),
+            "blue": (52, 152, 219),
+            "brown": (120, 84, 62),
+            "crimson": (192, 57, 43),
+            "cyan": (26, 188, 156),
+            "darkred": (139, 0, 0),
+            "gold": (241, 196, 15),
             "green": (46, 204, 113),
+            "lime": (46, 204, 113),
+            "magenta": (155, 89, 182),
+            "maroon": (128, 0, 0),
+            "orange": (230, 126, 34),
+            "purple": (142, 68, 173),
+            "rainbow": (155, 89, 182),
             "yellow": (241, 196, 15),
             "red": (231, 76, 60),
+            "violet": (142, 68, 173),
             "gray": (149, 165, 166),
+            "grey": (149, 165, 166),
             "none": (189, 195, 199),
             "fundo": (44, 62, 80),
             "linha": (127, 140, 141)

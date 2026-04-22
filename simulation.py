@@ -6,9 +6,10 @@ from models.drone import Drone
 # Tabela de Cores ANSI para o Terminal
 COLORS = {
     # Cores Básicas
-    "black": "\033[30m",
+    "black": "\033[90m",
     "red": "\033[91m",
     "green": "\033[92m",
+    "lime": "\033[92m",
     "yellow": "\033[93m",
     "blue": "\033[94m",
     "magenta": "\033[95m",
@@ -19,14 +20,59 @@ COLORS = {
     "purple": "\033[38;5;129m",
     "maroon": "\033[38;5;88m",
     "gold": "\033[38;5;220m",
+    "crimson": "\033[38;5;160m",
+    "darkred": "\033[38;5;88m",
+    "violet": "\033[38;5;177m",
+    "rainbow": "\033[95m",
     
     "reset": "\033[0m"
 }
 
 
+COLOR_ALIASES = {
+    "darkred": "maroon",
+    "crimson": "red",
+    "violet": "purple",
+    "rainbow": "magenta",
+    "grey": "gray",
+}
+
+
+def resolve_color_name(color_name: Optional[str]) -> Optional[str]:
+    if not color_name:
+        return None
+
+    normalized = color_name.lower()
+    if normalized in COLORS:
+        return normalized
+
+    return COLOR_ALIASES.get(normalized, normalized)
+
+
+def resolve_ansi_code(color_name: Optional[str]) -> Optional[str]:
+    resolved_name = resolve_color_name(color_name)
+    if not resolved_name:
+        return None
+
+    if resolved_name in COLORS:
+        return COLORS[resolved_name]
+
+    sanitized_name = resolved_name.replace("_", "").replace("-", "")
+    if not sanitized_name:
+        return COLORS["gray"]
+
+    weighted_sum = 0
+    for index, char in enumerate(sanitized_name):
+        weighted_sum += (index + 1) * ord(char)
+
+    ansi_256_color = 16 + (weighted_sum % 216)
+    return f"\033[38;5;{ansi_256_color}m"
+
+
 def colorize(text: str, color_name: Optional[str]) -> str:
-    if color_name and color_name.lower() in COLORS:
-        return f"{COLORS[color_name.lower()]}{text}{COLORS['reset']}"
+    ansi_code = resolve_ansi_code(color_name)
+    if ansi_code:
+        return f"{ansi_code}{text}{COLORS['reset']}"
     return text
 
 
