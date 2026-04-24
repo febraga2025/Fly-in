@@ -4,7 +4,8 @@ from models.connections import Connection
 
 
 class MapGraph:
-    """ Graph that stores all the zones and connections of the read file."""
+    """Graph that stores all the zones and connections of the file."""
+
     def __init__(self) -> None:
         self.zones: Dict[str, Zone] = {}
         self.connections: List[Connection] = []
@@ -13,7 +14,8 @@ class MapGraph:
 
     def add_zone(self, zone: Zone) -> None:
         if zone.name in self.zones:
-            raise ValueError(f"Zona {zone.name} already exists in the graph")
+            msg = f"Zone {zone.name} already exists in the graph"
+            raise ValueError(msg)
         self.zones[zone.name] = zone
         if zone.is_start:
             self.start_zone = zone

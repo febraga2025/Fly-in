@@ -1,79 +1,8 @@
-from typing import List, Dict, Optional
+from typing import List, Dict
 from models.graph import MapGraph
 from models.zone import Zone
 from models.drone import Drone
-
-# Tabela de Cores ANSI para o Terminal
-COLORS = {
-    # Cores Básicas
-    "black": "\033[90m",
-    "red": "\033[91m",
-    "green": "\033[92m",
-    "lime": "\033[92m",
-    "yellow": "\033[93m",
-    "blue": "\033[94m",
-    "magenta": "\033[95m",
-    "cyan": "\033[96m",
-    "gray": "\033[90m",
-    "orange": "\033[38;5;208m",
-    "brown": "\033[38;5;94m",
-    "purple": "\033[38;5;129m",
-    "maroon": "\033[38;5;88m",
-    "gold": "\033[38;5;220m",
-    "crimson": "\033[38;5;160m",
-    "darkred": "\033[38;5;88m",
-    "violet": "\033[38;5;177m",
-    "rainbow": "\033[95m",
-    
-    "reset": "\033[0m"
-}
-
-
-COLOR_ALIASES = {
-    "darkred": "maroon",
-    "crimson": "red",
-    "violet": "purple",
-    "rainbow": "magenta",
-    "grey": "gray",
-}
-
-
-def resolve_color_name(color_name: Optional[str]) -> Optional[str]:
-    if not color_name:
-        return None
-
-    normalized = color_name.lower()
-    if normalized in COLORS:
-        return normalized
-
-    return COLOR_ALIASES.get(normalized, normalized)
-
-
-def resolve_ansi_code(color_name: Optional[str]) -> Optional[str]:
-    resolved_name = resolve_color_name(color_name)
-    if not resolved_name:
-        return None
-
-    if resolved_name in COLORS:
-        return COLORS[resolved_name]
-
-    sanitized_name = resolved_name.replace("_", "").replace("-", "")
-    if not sanitized_name:
-        return COLORS["gray"]
-
-    weighted_sum = 0
-    for index, char in enumerate(sanitized_name):
-        weighted_sum += (index + 1) * ord(char)
-
-    ansi_256_color = 16 + (weighted_sum % 216)
-    return f"\033[38;5;{ansi_256_color}m"
-
-
-def colorize(text: str, color_name: Optional[str]) -> str:
-    ansi_code = resolve_ansi_code(color_name)
-    if ansi_code:
-        return f"{ansi_code}{text}{COLORS['reset']}"
-    return text
+from models.connections import Connection
 
 
 class Simulation:
@@ -84,8 +13,9 @@ class Simulation:
 
         start_zone = self.map_graph.start_zone
         if not start_zone:
-            raise ValueError("The map does not have a defined starting zone.")
-        
+            msg = "The map does not have a defined starting zone."
+            raise ValueError(msg)
+
         for i in range(1, nb_drones + 1):
             new_drone = Drone(f"D{i}", start_zone)
             self.drones.append(new_drone)
@@ -96,82 +26,111 @@ class Simulation:
             if d.current_zone == zone or d.target_zone == zone:
                 count += 1
         return count
-    
+
     def run_autopilot_turn(self, gps: Dict[str, int]) -> None:
         self.turn += 1
         turn_outputs: List[str] = []
 
-        # 1. POUSO OFICIAL: Libera os drones que já completaram o tempo de voo
+        # 1. OFFICIAL LANDING: Release drones that have completed
+        # their flight time
         for drone in self.drones:
             if drone.target_zone and self.turn >= drone.arrival_turn:
                 drone.finish_flight()
 
-        # 2. RADAR DE CHEGADA (Restricted): Se o drone está no ÚLTIMO turno do voo dele
+        # 2. ARRIVAL RADAR (Restricted): If the drone is on
+        # the LAST turn of its flight
         for drone in self.drones:
-            if drone.target_zone and self.turn == (drone.arrival_turn - 1) and drone.flight_cost > 1:
-                colored_zone = colorize(drone.target_zone.name, drone.target_zone.color)
-                turn_outputs.append(f"{drone.id}-{colored_zone}")
+            if (
+                drone.target_zone and
+                self.turn == (drone.arrival_turn - 1) and
+                drone.flight_cost > 1
+            ):
+                turn_outputs.append(f"{drone.id}-{drone.target_zone.name}")
 
-        # 3. RADAR DE CONEXÕES: Conta quem já está voando nas estradas para não engarrafar
-        conn_usage = {}
+        # 3. CONNECTION RADAR: Count who is already flying on the roads
+        # to avoid congestion
+        conn_usage: Dict[Connection, int] = {}
         for drone in self.drones:
             if drone.is_flying(self.turn) and drone.active_connection:
-                conn_usage[drone.active_connection] = conn_usage.get(drone.active_connection, 0) + 1
+                key = drone.active_connection
+                conn_usage[key] = conn_usage.get(key, 0) + 1
 
-        # 4. Filtra quem pode se mover (Quem não está voando e não chegou no fim)
+        # 4. Filter who can move (Not flying and not at the end)
         drones_to_move = [
             d for d in self.drones
-            if not d.is_flying(self.turn) and d.current_zone != self.map_graph.end_zone
+            if (
+                not d.is_flying(self.turn) and
+                d.current_zone != self.map_graph.end_zone
+            )
         ]
 
-        # 5. Decide a rota
+        # 5. Decide the route
         for drone in drones_to_move:
             current = drone.current_zone
+            if current is None:
+                continue
             current_dist = gps.get(current.name, 999999)
-            
+
             best_neighbor = None
-            best_dist = 999999
-            best_conn = None
+            best_dist: float = 999999.0
+            best_conn: Connection | None = None
             connection_used = ""
 
             for conn in self.map_graph.connections:
                 if current in (conn.zone_a, conn.zone_b):
                     neighbor = conn.get_opposite_zone(current)
 
-                    # Regra 1: ZONA destino tem que ter espaço
-                    if neighbor.can_enter() and self.get_zone_occupancy(neighbor) < neighbor.max_drones:
-                        
-                        # Regra 2: CONEXÃO (Estrada) tem que ter espaço
+                    # Rule 1: Destination ZONE must have space
+                    if (
+                        neighbor.can_enter() and
+                        self.get_zone_occupancy(neighbor) <
+                        neighbor.max_drones
+                    ):
+
+                        # Rule 2: CONNECTION (Road) must have space
                         current_conn_usage = conn_usage.get(conn, 0)
                         if current_conn_usage < conn.max_link_capacity:
-                            
-                            dist = gps.get(neighbor.name, 999999)
-                            virtual_dist = dist - 0.1 if neighbor.__class__.__name__ == "PriorityZone" else dist
 
-                            # Regra 3: Não andar para trás
-                            if virtual_dist < best_dist and dist <= current_dist:
+                            dist = gps.get(neighbor.name, 999999)
+                            is_priority = (
+                                neighbor.__class__.__name__ ==
+                                "PriorityZone"
+                            )
+                            virtual_dist = (
+                                dist - 0.1 if is_priority else dist
+                            )
+
+                            # Rule 3: Don't go backwards
+                            if (
+                                virtual_dist < best_dist and
+                                dist <= current_dist
+                            ):
                                 best_dist = virtual_dist
                                 best_neighbor = neighbor
                                 best_conn = conn
-                                connection_used = f"{current.name}-{neighbor.name}"
+                                connection_used = (
+                                    f"{current.name}-{neighbor.name}"
+                                )
 
-            # 6. Aplica o movimento e gera o output inicial
+            # 6. Apply movement and generate initial output
             if best_neighbor:
                 cost = best_neighbor.get_movement_cost()
                 drone.target_zone = best_neighbor
                 drone.arrival_turn = self.turn + cost
                 drone.flight_cost = cost
                 drone.connection_name = connection_used
-                drone.active_connection = best_conn 
-                drone.current_zone = None 
+                drone.active_connection = best_conn
+                drone.current_zone = None
 
-                # Reserva a vaga na estrada na mesma hora
-                conn_usage[best_conn] = conn_usage.get(best_conn, 0) + 1
+                # Reserve the spot on the road right away
+                if best_conn is not None:
+                    conn_usage[best_conn] = (
+                        conn_usage.get(best_conn, 0) + 1
+                    )
 
                 if cost == 1:
-                    colored_zone = colorize(best_neighbor.name,
-                                            best_neighbor.color)
-                    turn_outputs.append(f"{drone.id}-{colored_zone}")
+                    zone_str = best_neighbor.name
+                    turn_outputs.append(f"{drone.id}-{zone_str}")
                 else:
                     turn_outputs.append(f"{drone.id}-{connection_used}")
         print(" ".join(turn_outputs))

@@ -2,7 +2,8 @@ from typing import Optional
 
 
 class Zone:
-    """"Class abstract fort all zone"""
+    """Abstract class for all zones"""
+
     def __init__(self, name: str, x: int, y: int, max_drones: int = 1,
                  color: Optional[str] = None) -> None:
         self.name: str = name
@@ -15,14 +16,19 @@ class Zone:
         self.is_end: bool = False
 
     def get_movement_cost(self) -> int:
-        raise NotImplementedError("Subclasses deve implementar get_movement")
+        raise NotImplementedError(
+            "Subclasses must implement get_movement"
+        )
 
     def can_enter(self) -> bool:
-        "verifica a zona(black return false)"
+        """Checks the zone (blocked returns false)"""
         return True
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name}, max={self.max_drones})"
+        return (
+            f"{self.__class__.__name__}"
+            f"({self.name}, max={self.max_drones})"
+        )
 
 
 class PriorityZone(Zone):

@@ -7,7 +7,7 @@ from models.connections import Connection
 from models.drone import Drone
 from models.graph import MapGraph
 from models.zone import Zone
-from visualizer.vizu import Visualizador
+from visualizer.vizu import Visualizer
 
 
 DroneSnapshot = Tuple[
@@ -30,7 +30,8 @@ def _build_replay_drones(
     for d_id, cur, tar, arr, conn, cost in snapshot:
         initial_zone = cur or tar or map_graph.start_zone
         if initial_zone is None:
-            raise ValueError("Replay snapshot has no valid initial zone.")
+            msg = "Replay snapshot has no valid initial zone."
+            raise ValueError(msg)
 
         drone = Drone(d_id, initial_zone)
         drone.current_zone = cur
@@ -49,8 +50,8 @@ def run_pygame_replay(
 ) -> None:
     """Open a pygame window to browse the simulation replay."""
     pygame.init()
-    visualizer = Visualizador()
-    screen = pygame.display.set_mode((visualizer.largura, visualizer.altura))
+    visualizer = Visualizer()
+    screen = pygame.display.set_mode((visualizer.width, visualizer.height))
     pygame.display.set_caption(f"Fly-in Simulation: {map_file}")
     clock = pygame.time.Clock()
 
@@ -63,8 +64,8 @@ def run_pygame_replay(
 
             if event.type == pygame.KEYDOWN:
                 if (
-                    event.key == pygame.K_RIGHT
-                    and frame_index < len(history) - 1
+                    event.key == pygame.K_RIGHT and
+                    frame_index < len(history) - 1
                 ):
                     frame_index += 1
                 elif event.key == pygame.K_LEFT and frame_index > 0:
@@ -74,10 +75,12 @@ def run_pygame_replay(
         drones_temp = _build_replay_drones(snapshot, map_graph)
 
         screen.fill((44, 62, 80))
-        visualizer.draw_mapa(screen, map_graph.zones, map_graph.connections)
-        visualizer.draw_drones(screen, drones_temp, turn_number)
-        text_turn = visualizer.fonte.render(
-            f"Turno Atual: {turn_number}",
+        visualizer.draw_map(screen, map_graph.zones,  # type: ignore
+                            map_graph.connections)
+        visualizer.draw_drones(screen, drones_temp,  # type: ignore
+                               turn_number)
+        text_turn = visualizer.font.render(
+            f"Current Turn: {turn_number}",
             True,
             (255, 255, 255),
         )

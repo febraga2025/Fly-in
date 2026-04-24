@@ -1,24 +1,28 @@
 import sys
+import os
 
 from simulation_runner import run_text_simulation
 from visualizer.replay import run_pygame_replay
 
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+
 
 def main() -> None:
-    # 1. Verifica se o usuário passou o nome do mapa no terminal
-    if len(sys.argv) != 2:
+    # 1. Check if user passed the map file name in terminal
+    if len(sys.argv) < 2:
         print("Usage: python3 main.py <map_file.txt>")
         sys.exit(1)
 
     map_file = sys.argv[1]
+    use_viz = "--visual" in sys.argv
 
     try:
         map_graph, turn_logs, history = run_text_simulation(map_file)
 
         for log_line in turn_logs:
             print(log_line)
-
-        run_pygame_replay(map_graph, history, map_file)
+        if use_viz:
+            run_pygame_replay(map_graph, history, map_file)
 
     except Exception as error:
         print(f"Error: {error}")

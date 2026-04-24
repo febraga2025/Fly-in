@@ -14,8 +14,8 @@ from models.graph import MapGraph
 
 def extract_metadata(line: str) -> Tuple[str, Dict[str, str]]:
     metadata = {}
-    match = re.search(r'\[(.*?)\]', line)  # re procura qualquer coisa entre
-    # colchetes
+    # regex searches for anything between brackets
+    match = re.search(r'\[(.*?)\]', line)
 
     if match:
         content = match.group(1)
@@ -30,12 +30,12 @@ def extract_metadata(line: str) -> Tuple[str, Dict[str, str]]:
     return line, metadata
 
 
-def create_zone_object(name, x: int, y: int, metadata: Dict[str, str],
+def create_zone_object(name: str, x: int, y: int,
+                       metadata: Dict[str, str],
                        is_start: bool, is_end: bool) -> Zone:
     """
-    Essa é uma "Factory Function" (Fábrica). Ela decide qual classe filha de 
-    Zone
-    ela deve instanciar baseada no metadado 'zone'.
+    This is a "Factory Function". It decides which subclass of Zone
+    should be instantiated based on the 'zone' metadata.
     """
     z_type = metadata.get('zone', 'normal')
     max_drones = int(metadata.get('max_drones', 1))
@@ -43,7 +43,8 @@ def create_zone_object(name, x: int, y: int, metadata: Dict[str, str],
     max_drones = int(metadata.get('max_drones', 1))
     if max_drones <= 0:
         raise ValueError("max_drones must be strictly positive.")
-    
+
+    zone: Zone
     if z_type == 'normal':
         zone = NormalZone(name, x, y, max_drones, color)
     elif z_type == 'restricted':
@@ -65,16 +66,16 @@ def create_zone_object(name, x: int, y: int, metadata: Dict[str, str],
 
 def parse_map(file_path: str) -> Tuple[MapGraph, int]:
     """
-    Lê o arquivo TXT, linha por linha, e constrói o mapa.
-    Retorna o MapGraph populado e a quantidade total de drones.
+    Reads the TXT file, line by line, and builds the map.
+    Returns the populated MapGraph and the total number of drones.
     """
-    map_graph = MapGraph()  # Mudei de 'map' para 'map_graph' para não dar erro
+    map_graph = MapGraph()
     nb_drones = 0
     has_start = False
     has_end = False
-    
-    is_first_line = True               # Flag para saber se estamos na 1ª linha
-    seen_connections = set()           # Memória para não deixar duplicar conexões
+
+    is_first_line = True
+    seen_connections = set()
 
     with open(file_path, 'r') as f:
         for line_num, original_line in enumerate(f, start=1):
@@ -82,37 +83,48 @@ def parse_map(file_path: str) -> Tuple[MapGraph, int]:
 
             if not line or line.startswith('#'):
                 continue
-            
+
             try:
-                # --- REGRA 1: Primeira linha obrigatoriamente é nb_drones ---
+                # --- RULE 1: First line must be nb_drones ---
                 if is_first_line:
                     if not line.startswith('nb_drones:'):
-                        raise ValueError("The first line must define nb_drones.")
-                    
+                        msg = "The first line must define nb_drones."
+                        raise ValueError(msg)
+
                     nb_drones = int(line.split(':')[1].strip())
                     if nb_drones <= 0:
-                        raise ValueError("The number of drones should be positive.")
+                        msg = "The number of drones should be positive."
+                        raise ValueError(msg)
                     is_first_line = False
                     continue
 
-                # --- REGRA 2: Zonas ---
-                elif any(line.startswith(prefix) for prefix in ['start_hub:', 'end_hub:', 'hub:']):
+                # --- RULE 2: Zones ---
+                elif any(
+                    line.startswith(prefix)
+                    for prefix in ['start_hub:', 'end_hub:', 'hub:']
+                ):
                     clean_line, metadata = extract_metadata(line)
                     prefix, data = clean_line.split(':', 1)
                     parts = data.strip().split()
 
                     if len(parts) != 3:
-                        raise ValueError("Invalid zone format. Expected: name x y")
-                    
+                        msg = (
+                            "Invalid zone format. "
+                            "Expected: name x y"
+                        )
+                        raise ValueError(msg)
+
                     is_start = prefix == 'start_hub'
                     is_end = prefix == 'end_hub'
 
-                    # Bloqueia se tentar colocar dois Starts ou dois Ends
+                    # Block if trying to add multiple starts or ends
                     if is_start:
                         if has_start:
-                            raise ValueError("Multiple start_hubs found.")
+                            raise ValueError(
+                                "Multiple start_hubs found."
+                            )
                         has_start = True
-                        
+
                     if is_end:
                         if has_end:
                             raise ValueError("Multiple end_hubs found.")
@@ -123,25 +135,35 @@ def parse_map(file_path: str) -> Tuple[MapGraph, int]:
                     y = int(parts[2])
 
                     if '-' in name:
-                        raise ValueError(f"Zone name cannot contain dashes: {name}")
+                        msg = (
+                            f"Zone name cannot contain dashes: {name}"
+                        )
+                        raise ValueError(msg)
 
-                    new_zone = create_zone_object(name, x, y, metadata, is_start, is_end)
+                    new_zone = create_zone_object(
+                        name, x, y, metadata, is_start, is_end
+                    )
                     map_graph.add_zone(new_zone)
 
-                # --- REGRA 3: Conexões ---
+                # --- RULE 3: Connections ---
                 elif line.startswith('connection:'):
                     clean_line, metadata = extract_metadata(line)
                     data = clean_line.split(':')[1].strip()
 
                     z1_name, z2_name = data.split('-')
-                    
-                    # Bloqueia conexões duplicadas (ex: a-b e b-a)
+
+                    # Block duplicate connections
                     conn_id1 = f"{z1_name}-{z2_name}"
                     conn_id2 = f"{z2_name}-{z1_name}"
-                    if conn_id1 in seen_connections or conn_id2 in seen_connections:
-                        raise ValueError(f"Duplicate connection: {conn_id1}")
-                    
-                    # Adiciona na memória
+                    if (
+                        conn_id1 in seen_connections or
+                        conn_id2 in seen_connections
+                    ):
+                        raise ValueError(
+                            f"Duplicate connection: {conn_id1}"
+                        )
+
+                    # Add to memory
                     seen_connections.add(conn_id1)
                     seen_connections.add(conn_id2)
 
@@ -149,22 +171,31 @@ def parse_map(file_path: str) -> Tuple[MapGraph, int]:
                     z2 = map_graph.get_zone(z2_name)
 
                     cap = int(metadata.get('max_link_capacity', 1))
-                    
-                    # Bloqueia conexões com capacidade 0
+
+                    # Block connections with 0 capacity
                     if cap <= 0:
-                        raise ValueError("Connection capacity must be strictly positive.")
+                        msg = (
+                            "Connection capacity "
+                            "must be strictly positive."
+                        )
+                        raise ValueError(msg)
 
                     new_connection = Connection(z1, z2, cap)
                     map_graph.add_connection(new_connection)
 
                 else:
-                    raise ValueError(f"Unrecognized command: {line.split(':')[0]}")
-                    
+                    cmd = line.split(':')[0]
+                    raise ValueError(f"Unrecognized command: {cmd}")
+
             except Exception as e:
                 raise Exception(f"Parse error on line {line_num}: {e}")
 
-        # Validação final pós-leitura
+        # Final validation after reading
         if not has_start or not has_end:
-            raise ValueError("The map must contain exactly one 'start_hub' and one 'end_hub'.")
-            
+            msg = (
+                "The map must contain exactly one "
+                "'start_hub' and one 'end_hub'."
+            )
+            raise ValueError(msg)
+
         return map_graph, nb_drones
