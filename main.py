@@ -15,7 +15,7 @@ def main() -> None:
 
     map_file = sys.argv[1]
     use_viz = "--visual" in sys.argv
-
+    # capacity
     try:
         map_graph, turn_logs, history = run_text_simulation(map_file)
 

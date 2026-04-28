@@ -20,11 +20,12 @@ debug:
 clean:
 	find . -type d -name '__pycache__' -prune -exec rm -rf {} +
 	rm -rf .mypy_cache .pytest_cache .ruff_cache
+	rm -rf $(VENV)
 
 lint:
-	flake8 .
+	flake8 --exclude=.venv .
 	mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
 
 lint-strict:
-	flake8 .
+	flake8 --exclude=.venv .
 	mypy . --strict

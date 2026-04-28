@@ -59,15 +59,16 @@ def run_text_simulation(
 
         buffer = io.StringIO()
         with redirect_stdout(buffer):
-            simulation.run_autopilot_turn(gps)
+            simulation.run_autopilot_turn(gps)  # flag here
 
         raw_lines = [line.strip() for line in buffer.getvalue().splitlines()]
         move_lines = [line for line in raw_lines if line.startswith("D")]
+        # CAP_LINE HERE
         turn_line = move_lines[-1] if move_lines else ""
 
         if turn_line:
             turn_logs.append(turn_line)
-
+        # SHOW_CAPACITY
         if simulation.is_finished() and not turn_line:
             simulation.turn -= 1
             break
