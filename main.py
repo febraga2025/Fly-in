@@ -1,10 +1,9 @@
 import sys
 import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
 from simulation_runner import run_text_simulation
 from visualizer.replay import run_pygame_replay
-
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
 
 def main() -> None:
@@ -15,12 +14,13 @@ def main() -> None:
 
     map_file = sys.argv[1]
     use_viz = "--visual" in sys.argv
+    # show_cap = "--capacity-info" in sys.argv
     # capacity
     try:
-        map_graph, turn_logs, history = run_text_simulation(map_file)
+        map_graph, _,history = run_text_simulation(map_file)
 
-        for log_line in turn_logs:
-            print(log_line)
+        #for log_line in turn_logs:
+        #    print(log_line)
         if use_viz:
             run_pygame_replay(map_graph, history, map_file)
 
