@@ -134,7 +134,7 @@ class Simulation:
                 else:
                     turn_outputs.append(f"{drone.id}-{connection_used}")
         print(" ".join(turn_outputs))
-    
+
     def is_finished(self) -> bool:
         for drone in self.drones:
             if drone.current_zone != self.map_graph.end_zone:

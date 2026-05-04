@@ -1,5 +1,4 @@
 from __future__ import annotations
-import sys
 
 import io
 from contextlib import redirect_stdout
@@ -70,28 +69,8 @@ def run_text_simulation(
         if turn_line:
             print(turn_line)
             turn_logs.append(turn_line)
-        """ # SHOW_CAPACITY
-            if "--capacity-info" in sys.argv:
-                # 1. Processando a capacidade das Zonas[cite: 1]
-                z_cap = []
-                for z in map_graph.zones.values():
-                    # Ignoramos hubs com capacidade "infinita" (start/end)
-                    if z.max_drones < 1000:
-                        occ = simulation.get_zone_occupancy(z)
-                        z_cap.append(f"Zone {z.name}: {occ}/{z.max_drones} drones")
+        # SHOW_CAPACITY
 
-                # 2. Processando a capacidade das Conexões[cite: 1]
-                c_cap = []
-                for c in map_graph.connections:
-                    # Contamos quantos drones estão voando nesta conexão agora
-                    usage = 0
-                    for d in simulation.drones:
-                        if d.active_connection == c and d.is_flying(simulation.turn):
-                            usage += 1
-                    c_cap.append(f"Conn {c.zone_a.name}-{c.zone_b.name}: {usage}/{c.max_link_capacity} used")
-
-                # 3. Imprimindo o resultado formatado[cite: 1]
-                print(f"  [CAPACITY] {', '.join(z_cap + c_cap)}") """
         if simulation.is_finished() and not turn_line:
             simulation.turn -= 1
             break

@@ -5,6 +5,17 @@
 ## Description
 Fly-in is an autonomous drone routing simulator. The project's goal is to manage the traffic of a drone fleet across a network of zones (a graph), from a starting point to a final destination. The system ensures that drones always choose the shortest and fastest path while strictly respecting the capacity limits of each zone and connection, preventing collisions and traffic jams along the way.
 
+### Example
+**Input:**
+nb_drones: 2
+start_hub: start 0 0
+end_hub: goal 1 0
+connection: start-goal
+
+**Output:**
+D1-goal
+D2-goal
+
 ## Instructions
 The project includes a `Makefile` to automate all tasks. 
 
